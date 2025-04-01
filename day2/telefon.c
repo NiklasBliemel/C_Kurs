@@ -17,4 +17,13 @@ int main()
         }
     printf("\n\n");    
     }
+    printf("\n\n\n"); 
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            printf("%d\t", array_a[3 * i + j]);
+        }
+    printf("\n\n");    
+    }
 }
