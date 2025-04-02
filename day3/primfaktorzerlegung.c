@@ -50,7 +50,6 @@ int main()
     int N;
     printf("Wähle N: ");
     scanf("%d", &N);
-    int copy_N = N;
 
     int *primes = get_primes(N);
 
@@ -59,14 +58,14 @@ int main()
 
     for (int i = 1; i <= *primes; i++)
     {
-        while (copy_N % primes[i] == 0)
+        while (N % primes[i] == 0)
         {
-            copy_N /= primes[i];
+            N /= primes[i];
             out = append(out, primes[i]);
         }
         if (primes[i] * primes[i] > N)
         {
-            out = append(out, copy_N);
+            out = append(out, N);
             break;
         }
     }
