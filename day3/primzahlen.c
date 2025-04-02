@@ -23,20 +23,18 @@ int main()
         {   
             arr[i] = 0;
         }
+        fin = 1;
         for (int i = prime + 1; i < arr_size; i++)
         {
             if (arr[i] != 0)
             {
+                fin = 0;
                 prime = arr[i];
                 out_size++;
                 out = realloc(out, out_size * sizeof(*out));
                 out[out_size-1] = prime;
                 break;
             }
-        }
-        if (2 * prime >= arr_size)
-        {
-            fin = 1;
         }
     }
     printf("[");
