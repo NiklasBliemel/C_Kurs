@@ -1,0 +1,23 @@
+Aufgaben zur Praktischen Physik
+
+Konstante: m(Kuh) = 400 kg
+
+Mechanik:
+Eine Kuh galoppiere beschleunigt (a = 3 m/s^2) auf eine andere, stehende aus bestimmter Entfernung zu (v0 = 0 m/s). Bei dem auftretenden unelastischen Stoß werden 90% der kinetischen Energie in Verformungsarbeit umgesetzt. Berechnen Sie die Verformungsarbeit in Abhängigkeit vom Anlaufweg s und stellen Sie den Zusammenhang grafisch dar.
+
+Elektrizitätslehre:
+1.Die Kuh beiße in den elektrisch geladenen Weidezaun (U = 40 V). Ein Strommessgerät registriert durch die Kuh einen Strom von 0.5 mA. Wie hoch ist der Ohmsche Widerstand des Tieres?
+
+2.Dieselbe Kuh werde nun mit einer Spule (L = 0.5H) in Reihe geschaltet und an eine Wechselspannung von 50 Hz gelegt. Berechnen Sie den Scheinwiderstand Z dieses RL-Gliedes und die Phasenverschiebung j zwischen Strom und Spannung, wobei der Widerstand der Spule vernachlässigbar ist.
+
+Quantenmechanik:
+1.Die Kuh befinde sich auf einer Weide, die ringsum durch einen Zaun abgegrenzt ist. Der Weidezaun sei ideal gebaut, so dass die Kuh ihn (klassisch gesehen) nicht passieren kann. Begründen Sie, dass man die Kuh trotzdem mit gewisser Wahrscheinlichkeit außerhalb der Weide antrifft!
+
+2.Unter Verletzung der Energieerhaltung können nach der Heisenbergschen Unschärferelation kurzfristig sogenannte virtuelle Teilchen entstehen. Berechnen Sie die Lebensdauer einer virtuellen Kuh.
+
+3."Schrödingers Kuh": Ein Mensch sperrt eine Kuh in einen Atombunker, aus dem keine Information nach außen dringt. Für den Beobachter ist die Kuh dann quantentheoretisch sowohl tot als auch lebendig (nicht "entweder...oder"!). Erklären Sie den scheinbaren Widerspruch!
+
+4.Berechnen Sie die De-Broglie-Wellenlänge einer Kuh, die mit v = 10 m/s auf der Weide galoppiert. Bis zur welchen Größenordnungen könnte man mit dieser Welle in der Mikroskopie Strukturen auflösen? Wieso benutzt man in der Strukturforschung keine Kühe?
+
+Kernphysik:
+Die Kuh frisst auf der Weide 8 Stunden lang pro Stunde 2 kg radioaktiv verseuchtes Gras mit einem K-40-Gehalt von 0.01%. Während dieser Zeit scheidet die Kuh stündlich Fladen von 1 kg aus (die K-40-Konzentration in den Fladen sei näherungsweise ebenfalls 0.01%). Berechnen Sie die Anzahl der K-40-Atome in der Kuh drei Wochen nach der Beendigung des Fressens unter Verwendung geeigneter Näherungen (die Kuh stelle während dieser Zeit auch das Abkoten ein). 
