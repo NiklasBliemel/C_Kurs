@@ -35,8 +35,8 @@ Tensor *copy(Tensor *tensor);
 
 Tensor *arange(unsigned int range);
 
-Tensor *_operation(char op, Tensor *t1, Tensor *t2);
+Tensor *operation(char op, Tensor *t1, Tensor *t2);
 
-Tensor *add(Tensor *t1, Tensor *t2);
+void single_operation(char op, Tensor *t1, double num);
 
-Tensor *dot(Tensor *t1, Tensor *t2);
+Tensor *matmul(Tensor *t1, Tensor *t2);

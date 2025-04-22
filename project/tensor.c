@@ -66,26 +66,17 @@ unsigned int _flatten_index(Tensor *tensor, unsigned int *index_list, int len_li
     return index % tensor->num_entries;
 }
 
-unsigned int _reorder(Tensor *tensor, unsigned int flat_index)
+unsigned int _reorder_index(Tensor *tensor, unsigned int index, int dim)
 {
-    unsigned int out = 0;
-    if (flat_index >= tensor->num_entries)
-    {
-        printf("Flat index (%d) out of range (%d)\n", flat_index, tensor->num_entries);
-        return out;
-    }
-    if (flat_index == tensor->num_entries - 1)
+    if (index == tensor->num_entries - 1)
     {
         return tensor->num_entries - 1;
     }
-    unsigned temp = tensor->num_entries;
-    for (int i = 0; i < tensor->len_shape; i++)
+    if (dim < 0)
     {
-        temp /= tensor->shape[i];
-        out += (flat_index / temp) * tensor->stride[i];
-        flat_index = flat_index % temp;
+        return index * tensor->stride[tensor->len_shape + dim] % (tensor->num_entries - 1);
     }
-    return out % (tensor->num_entries - 1);
+    return index * tensor->stride[dim] % (tensor->num_entries - 1);
 }
 
 void print_tensor(Tensor *tensor)
@@ -99,7 +90,7 @@ void print_tensor(Tensor *tensor)
     }
     printf("%4.3lf", *tensor->data);
 
-    for (int flat_index = 1; flat_index < tensor->num_entries - 1; flat_index++)
+    for (unsigned int flat_index = 1; flat_index < tensor->num_entries - 1; flat_index++)
     {
         extra_print = 0;
         temp = 1;
@@ -139,7 +130,7 @@ void print_tensor(Tensor *tensor)
             }
         }
 
-        printf("%4.3lf", tensor->data[_reorder(tensor, flat_index)]);
+        printf("%4.3lf", tensor->data[_reorder_index(tensor, flat_index, -1)]);
     }
 
     printf(", %4.3lf", tensor->data[tensor->num_entries - 1]);
@@ -173,7 +164,7 @@ void print_stride(Tensor *tensor)
 double get_element(Tensor *tensor, unsigned int *index_list, int len_list)
 {
     unsigned int flat_index = _flatten_index(tensor, index_list, len_list);
-    if (flat_index != -1)
+    if (flat_index != (unsigned int)-1)
     {
         return tensor->data[flat_index];
     }
@@ -186,7 +177,7 @@ double get_element(Tensor *tensor, unsigned int *index_list, int len_list)
 double set_element(Tensor *tensor, unsigned int *index_list, int len_list, double new_entry)
 {
     unsigned int flat_index = _flatten_index(tensor, index_list, len_list);
-    if (flat_index != -1)
+    if (flat_index != (unsigned int)-1)
     {
         double out = tensor->data[flat_index];
         tensor->data[flat_index] = new_entry;
@@ -204,7 +195,7 @@ void reshape(Tensor *tensor, unsigned int *shape, int len_shape)
     int fill_index = -1;
     for (int i = 0; i < len_shape; i++)
     {
-        if (shape[i] != -1)
+        if (shape[i] != (unsigned int)-1)
         {
             check *= shape[i];
         }
@@ -264,37 +255,17 @@ void permute(Tensor *tensor, int *permutation, int len_permutation)
 
 void flat(Tensor *t)
 {
-    t->shape = realloc(t->shape, sizeof(int));
-    *t->shape = t->num_entries;
-    unsigned int temp = t->stride[t->len_shape - 1];
-    t->stride = realloc(t->stride, sizeof(int));
-    *t->stride = temp;
-    t->len_shape = 1;
-}
-
-unsigned int *_copy_shape(Tensor *t)
-{
-    unsigned int *out = malloc(t->len_shape * sizeof(int));
-    for (int i = 0; i < t->len_shape; i++)
-    {
-        out[i] = t->shape[i];
-    }
-    return out;
+    unsigned int shape[] = {-1};
+    reshape(t, shape, 1);
 }
 
 Tensor *copy(Tensor *tensor)
 {
-    Tensor *out = emtpy_tensor(tensor->shape, tensor->len_shape);
-    unsigned int *shape = _copy_shape(tensor);
-    int len_shape = tensor->len_shape;
-    flat(tensor);
-    for (unsigned int i = 0; i < tensor->num_entries - 1; i++)
+    Tensor *out = emtpy_like(tensor);
+    for (unsigned int i = 0; i < tensor->num_entries; i++)
     {
-        out->data[i] = tensor->data[(i + *tensor->stride) % (tensor->num_entries - 1)];
+        out->data[i] = tensor->data[_reorder_index(tensor, i, -1)];
     }
-    out->data[tensor->num_entries - 1] = tensor->data[tensor->num_entries - 1];
-    reshape(tensor, shape, len_shape);
-    free(shape);
     return out;
 }
 
@@ -325,96 +296,164 @@ Tensor *operation(char op, Tensor *t1, Tensor *t2)
             return out;
         }
     }
-    unsigned int *shape1 = _copy_shape(t1);
-    int len_shape1 = t1->len_shape;
-    flat(t1);
-    unsigned int *shape2 = _copy_shape(t2);
-    int len_shape2 = t2->len_shape;
-    flat(t2);
 
     if (op == '+')
     {
-        for (int i = 0; i < out->num_entries; i++)
+        for (unsigned int i = 0; i < out->num_entries - 1; i++)
         {
-            out->data[i] = t1->data[(i + *t1->stride) % (t1->num_entries - 1)] + t2->data[(i + *t1->stride) % (t1->num_entries - 1)];
+            out->data[i] = t1->data[_reorder_index(t1, i, -1)] + t2->data[_reorder_index(t2, i, -1)];
         }
     }
     else if (op == '-')
     {
-        for (int i = 0; i < out->num_entries; i++)
+        for (unsigned int i = 0; i < out->num_entries - 1; i++)
         {
-            out->data[i] = t1->data[(i + *t1->stride) % (t1->num_entries - 1)] - t2->data[(i + *t1->stride) % (t1->num_entries - 1)];
+            out->data[i] = t1->data[_reorder_index(t1, i, -1)] - t2->data[_reorder_index(t2, i, -1)];
         }
     }
     else if (op == '/')
     {
-        for (int i = 0; i < out->num_entries; i++)
+        for (unsigned int i = 0; i < out->num_entries - 1; i++)
         {
-            out->data[i] += t1->data[(i + *t1->stride) % (t1->num_entries - 1)] / t2->data[(i + *t1->stride) % (t1->num_entries - 1)];
+            out->data[i] += t1->data[_reorder_index(t1, i, -1)] / t2->data[_reorder_index(t2, i, -1)];
         }
     }
     else if (op == '*')
     {
-        for (int i = 0; i < out->num_entries; i++)
+        for (unsigned int i = 0; i < out->num_entries - 1; i++)
         {
-            out->data[i] += t1->data[(i + *t1->stride) % (t1->num_entries - 1)] * t2->data[(i + *t1->stride) % (t1->num_entries - 1)];
+            out->data[i] += t1->data[_reorder_index(t1, i, -1)] * t2->data[_reorder_index(t2, i, -1)];
         }
     }
-
-    reshape(t1, shape1, len_shape1);
-    reshape(t2, shape2, len_shape2);
-    free(shape1);
-    free(shape2);
     return out;
 }
 
-Tensor *add(Tensor *t1, Tensor *t2)
+void single_operation(char op, Tensor *t, double num)
 {
-    return operation('+', t1, t2);
+    if (op == '+')
+    {
+        for (unsigned int i = 0; i < t->num_entries; i++)
+        {
+            t->data[i] += num;
+        }
+    }
+    else if (op == '-')
+    {
+        for (unsigned int i = 0; i < t->num_entries; i++)
+        {
+            t->data[i] -= num;
+        }
+    }
+    else if (op == '/')
+    {
+        if (num == 0)
+        {
+            printf("Zero Devision Error!\n");
+            return;
+        }
+        for (unsigned int i = 0; i < t->num_entries; i++)
+        {
+            t->data[i] /= num;
+        }
+    }
+    else if (op == '*')
+    {
+        for (unsigned int i = 0; i < t->num_entries; i++)
+        {
+            t->data[i] *= num;
+        }
+    }
 }
 
-Tensor *dot(Tensor *t1, Tensor *t2)
+unsigned int _reorder_three(Tensor *tensor, unsigned int residual, unsigned int i1, unsigned int i2, unsigned int i3)
 {
-    Tensor *out = emtpy_like(t1);
+    if ((i1 % residual) == residual - 1 && i2 == tensor->shape[tensor->len_shape - 2] - 1 && i3 == tensor->shape[tensor->len_shape - 1] - 1)
+    {
+        return tensor->num_entries - 1;
+    }
+    unsigned int out = 0;
+    out += i2 * tensor->stride[tensor->len_shape - 2];
+    out += i3 * tensor->stride[tensor->len_shape - 1];
+    if (tensor->len_shape > 2)
+    {
+        out += (i1 % residual) * tensor->stride[tensor->len_shape - 3];
+    }
+    return out % (tensor->num_entries - 1);
+}
+
+Tensor *matmul(Tensor *t1, Tensor *t2)
+{
     if (t1->len_shape < 2 || t2->len_shape < 2)
     {
         printf("Dimensions smaller than 2!\n");
-        return out;
+        return zeros(t1->shape, t1->len_shape);
     }
+    unsigned int *out_shape;
+    int len_shape;
+    Tensor *out;
+    if (t1->len_shape <= t2->len_shape)
+    {
+        out_shape = malloc(t2->len_shape * sizeof(int));
+        for (int i = 0; i < t2->len_shape - 2; i++)
+        {
+            out_shape[i] = t2->shape[i];
+        }
+        len_shape = t2->len_shape;
+    }
+    else
+    {
+        out_shape = malloc(t1->len_shape * sizeof(int));
+        for (int i = 0; i < t1->len_shape - 2; i++)
+        {
+            out_shape[i] = t1->shape[i];
+        }
+        len_shape = t1->len_shape;
+    }
+    out_shape[t2->len_shape - 2] = t1->shape[t1->len_shape - 2];
+    out_shape[t2->len_shape - 1] = t2->shape[t2->len_shape - 1];
+    out = zeros(out_shape, len_shape);
+
     if (t1->shape[t1->len_shape - 1] != t2->shape[t2->len_shape - 2])
     {
         printf("ERR1: Shapes don't match!\n");
         return out;
     }
-    if (t1->len_shape == t2->len_shape)
+
+    for (int i = 3; i <= out->len_shape; i++)
     {
-        for (int i = 0; i < t1->len_shape - 2; i++)
+        if (t1->len_shape >= i && t2->len_shape >= i)
         {
-            if (t1->shape[i] != t2->shape[i])
+            if (t1->shape[t1->len_shape - i] != t2->shape[t2->len_shape - i])
             {
                 printf("ERR2: Shapes don't match!\n");
                 return out;
             }
         }
-        unsigned int *shape1 = _copy_shape(t1);
-        int len_shape1 = t1->len_shape;
-        unsigned int *shape2 = _copy_shape(t2);
-        int len_shape2 = t2->len_shape;
-        unsigned int new_shape1[3] = {-1};
-        unsigned int new_shape2[3] = {-1};
-        for (int i = 1; i < 3; i++)
-        {
-            new_shape1[i] = shape1[len_shape1 - 3 + i];
-            new_shape2[i] = shape2[len_shape1 - 3 + i];
-        }
-        reshape(t1, new_shape1, 3);
-        reshape(t2, new_shape2, 3);
-
-        // insert dot product
-
-        reshape(t1, shape1, len_shape1);
-        free(shape1);
-        reshape(t2, shape2, len_shape2);
-        free(shape2);
     }
+
+    unsigned int residual = out->num_entries;
+    unsigned int residual_1 = t1->num_entries;
+    unsigned int residual_2 = t2->num_entries;
+    for (int i = 1; i <= 2; i++)
+    {
+        residual /= out->shape[out->len_shape - i];
+        residual_1 /= t1->shape[t1->len_shape - i];
+        residual_2 /= t2->shape[t2->len_shape - i];
+    }
+
+    for (unsigned int i = 0; i < residual; i++)
+    {
+        for (unsigned int x = 0; x < out->shape[out->len_shape - 2]; x++)
+        {
+            for (unsigned int y = 0; y < out->shape[out->len_shape - 1]; y++)
+            {
+                for (unsigned int k = 0; k < t1->shape[t1->len_shape - 1]; k++)
+                {
+                    out->data[_reorder_three(out, residual, i, x, y)] +=
+                        t1->data[_reorder_three(t1, residual_1, i, x, k)] * t2->data[_reorder_three(t2, residual_2, i, k, y)];
+                }
+            }
+        }
+    }
+    return out;
 }
