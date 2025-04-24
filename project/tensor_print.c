@@ -2,25 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void print_tensor(Tensor *tensor)
+void print_tensor(Tensor *t)
 {
-    int extra_print;
-    unsigned int temp;
-
-    for (int i = 0; i < tensor->len_shape; i++)
+    if (t->num_entries == 0)
     {
-        printf("[");
+        printf("[]");
+        return;
     }
-    printf("%4.3lf", *tensor->data);
 
-    for (unsigned int flat_index = 1; flat_index < tensor->num_entries - 1; flat_index++)
+    int extra_print;
+    for (unsigned flat_index = 0; flat_index < t->num_entries - 1; flat_index++)
     {
-        extra_print = 0;
-        temp = 1;
-        for (int i = 0; i < tensor->len_shape; i++)
+        if (flat_index == 0)
         {
-            temp *= tensor->shape[tensor->len_shape - 1 - i];
-            if (flat_index % temp == 0)
+            extra_print = 0;
+        }
+        else
+        {
+            extra_print = -1;
+        }
+
+        for (int i = 0; i < t->rank; i++)
+        {
+            if (flat_index % t->stride[i] == 0)
             {
                 extra_print++;
             }
@@ -31,18 +35,24 @@ void print_tensor(Tensor *tensor)
         }
         else
         {
-            for (int i = 0; i < extra_print; i++)
+            if (flat_index != 0)
             {
-                printf("]");
+                for (int i = 0; i < extra_print; i++)
+                {
+                    printf("]");
+                }
+                printf(",");
+                if (flat_index != t->num_entries - 1)
+                {
+                    for (int i = 0; i < extra_print; i++)
+                    {
+                        printf("\n");
+                    }
+                }
             }
-            printf(",");
-            for (int i = 0; i < extra_print; i++)
+            for (int i = 0; i < t->rank; i++)
             {
-                printf("\n");
-            }
-            for (int i = 0; i < tensor->len_shape; i++)
-            {
-                if (i < tensor->len_shape - extra_print)
+                if (i < t->rank - extra_print)
                 {
                     printf(" ");
                 }
@@ -52,36 +62,32 @@ void print_tensor(Tensor *tensor)
                 }
             }
         }
-
-        printf("%4.3lf", tensor->data[_reorder_index(tensor, flat_index, -1)]);
+        printf("%4.3lf", t->data[_reorder(t, flat_index)]);
     }
-    if (tensor->num_entries > 1)
-    {
-        printf(", %4.3lf", tensor->data[tensor->num_entries - 1]);
-    }
-    for (int i = 0; i < tensor->len_shape; i++)
+    printf(", %4.3lf", t->data[t->num_entries - 1]);
+    for (int i = 0; i < t->rank; i++)
     {
         printf("]");
     }
     printf("\n");
 }
 
-void print_shape(Tensor *tensor)
+void print_shape(Tensor *t)
 {
-    printf("Shape: [%d", *tensor->shape);
-    for (int i = 1; i < tensor->len_shape; i++)
+    printf("Shape: [%d", *t->shape);
+    for (int i = 1; i < t->rank; i++)
     {
-        printf(", %d", tensor->shape[i]);
+        printf(", %d", t->shape[i]);
     }
     printf("]\n");
 }
 
-void print_stride(Tensor *tensor)
+void print_stride(Tensor *t)
 {
-    printf("Stride: [%d", *tensor->stride);
-    for (int i = 1; i < tensor->len_shape; i++)
+    printf("Stride: [%d", *t->stride);
+    for (int i = 1; i < t->rank; i++)
     {
-        printf(", %d", tensor->stride[i]);
+        printf(", %d", t->stride[i]);
     }
     printf("]\n");
 }

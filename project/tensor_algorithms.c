@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void QR(Tensor *Q, Tensor *R, Tensor *A)
+void _QR(Tensor *Q, Tensor *R, Tensor *A)
 {
-    if (A->len_shape != 2)
+    if (A->rank != 2)
     {
         printf("Tensor has to be 2 dimensional!\n");
         return;
@@ -20,21 +20,75 @@ void QR(Tensor *Q, Tensor *R, Tensor *A)
         return;
     }
 
+    // setup
     unsigned size = A->shape[0];
     Tensor *Qn = init_tensor();
     Tensor *u = init_tensor();
+    Tensor *Q_temp = init_tensor();
+    Tensor *R_temp = init_tensor();
 
+    // inital step
     extract_col(u, A, 0, 0);
     u->data[0] -= norm(u);
-    house_holder(Qn, u, size);
-    copy(Q, Qn);
-    matmul(R, Qn, A);
+    house_holder(Q, u, size);
+    matmul(R, Q, A);
+
+    // next steps
     for (unsigned i = 1; i < size - 1; i++)
     {
         extract_col(u, R, i, i);
         u->data[0] -= norm(u);
         house_holder(Qn, u, size);
-        matmul(Q, Q, Qn);
-        matmul(R, Qn, R);
+        matmul(R_temp, Qn, R);
+        matmul(Q_temp, Q, Qn);
+        copy(Q, Q_temp);
+        copy(R, R_temp);
     }
+    pop(Qn);
+    pop(u);
+    pop(Q_temp);
+    pop(R_temp);
+}
+
+void QR(Tensor *Q, Tensor *R, Tensor *A)
+{
+    if (A->rank == 2)
+    {
+        _QR(Q, R, A);
+        return;
+    }
+    if (A->shape[A->rank - 1] != A->shape[A->rank - 2])
+    {
+        printf("Matrix has to be square!\n");
+        return;
+    }
+    if (A->shape[A->rank - 1] < 2)
+    {
+        printf("Matrix at least size 2!\n");
+        return;
+    }
+    unsigned residual = A->num_entries;
+    residual /= A->shape[A->rank - 1];
+    residual /= A->shape[A->rank - 2];
+
+    shape_tensor(Q, A->shape, A->rank);
+    if (R != A)
+    {
+        shape_tensor(R, A->shape, A->rank);
+    }
+
+    unsigned shape[2] = {A->shape[A->rank - 2], A->shape[A->rank - 1]};
+    Tensor *a = subspace(shape, 2, A->data);
+    Tensor *q = subspace(shape, 2, Q->data);
+    Tensor *r = subspace(shape, 2, R->data);
+    for (unsigned i = 0; i < residual; i++)
+    {
+        a->data = &A->data[i * A->stride[A->rank - 3] % (A->num_entries - 1)];
+        q->data = &Q->data[i * Q->stride[A->rank - 3] % (Q->num_entries - 1)];
+        r->data = &R->data[i * R->stride[A->rank - 3] % (R->num_entries - 1)];
+        _QR(q, r, a);
+    }
+    pop_sub(a);
+    pop_sub(q);
+    pop_sub(r);
 }

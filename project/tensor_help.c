@@ -2,57 +2,82 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned _flatten_index(Tensor *tensor, unsigned *index_list, int len_list)
+unsigned _fill_shape(Tensor *t, unsigned *shape, int rank)
 {
-    if (tensor->len_shape != len_list)
+    unsigned fill_index = -1;
+    unsigned product = 1;
+    int counter = 0;
+    for (int i = 0; i < rank; i++)
     {
-        printf("Index List (%d) does not match Tensor shape (%d)\n", len_list, tensor->len_shape);
-        return -1;
-    }
-    unsigned index = 0;
-    for (int i = 0; i < tensor->len_shape; i++)
-    {
-        if (tensor->shape[i] < index_list[i])
+        if (shape[i] != (unsigned)-1)
         {
-            printf("%d. Index (%d) is out of range (%d)\n", i, index_list[i], tensor->shape[i]);
-            index = -1;
-            break;
+            product *= shape[i];
         }
         else
         {
-            index += index_list[i] * tensor->stride[i];
+            if (counter > 0)
+            {
+                printf("To many -1 in new shape!\n");
+                return -1;
+            }
+            counter++;
+            fill_index = i;
         }
     }
-    return index % tensor->num_entries;
+    if (fill_index != (unsigned)-1)
+    {
+        shape[fill_index] = t->num_entries / product;
+        product *= shape[fill_index];
+    }
+    return product;
 }
 
-unsigned _reorder_index(Tensor *tensor, unsigned index, int dim)
+unsigned _flatten_index(Tensor *t, unsigned *index_list, int len_list)
 {
-    if (index == tensor->num_entries - 1)
+    if (t->rank != len_list)
     {
-        return tensor->num_entries - 1;
+        printf("Index List (%d) does not match Tensor shape (%d)\n", len_list, t->rank);
+        return -1;
     }
-    if (dim < 0)
+    unsigned index = 0;
+    for (int i = 0; i < t->rank; i++)
     {
-        return index * tensor->stride[tensor->len_shape + dim] % (tensor->num_entries - 1);
+        if (t->shape[i] < index_list[i])
+        {
+            printf("%d. Index (%d) is out of range (%d)\n", i, index_list[i], t->shape[i]);
+            return -1;
+        }
+        else
+        {
+            index += index_list[i] * t->stride[i];
+        }
     }
-    return index * tensor->stride[dim] % (tensor->num_entries - 1);
+    return index;
 }
 
-unsigned _reorder_three(Tensor *tensor, unsigned residual, unsigned i1, unsigned i2, unsigned i3)
+unsigned _reorder(Tensor *t, unsigned flat_index)
 {
-    if ((i1 % residual) == residual - 1 && i2 == tensor->shape[tensor->len_shape - 2] - 1 && i3 == tensor->shape[tensor->len_shape - 1] - 1)
+    if (flat_index == t->num_entries - 1)
     {
-        return tensor->num_entries - 1;
+        return flat_index;
+    }
+    return flat_index * t->stride[t->rank - 1] % (t->num_entries - 1);
+}
+
+unsigned _reorder_three(Tensor *t, unsigned residual, unsigned i1, unsigned i2, unsigned i3)
+{
+    if ((i1 % residual) == residual - 1 && i2 == t->shape[t->rank - 2] - 1 && i3 == t->shape[t->rank - 1] - 1)
+    {
+        return t->num_entries - 1;
     }
     unsigned out = 0;
-    out += i2 * tensor->stride[tensor->len_shape - 2];
-    out += i3 * tensor->stride[tensor->len_shape - 1];
-    if (tensor->len_shape > 2)
+    out += i2 * t->stride[t->rank - 2];
+    out += i3 * t->stride[t->rank - 1];
+    if (t->rank > 2)
     {
-        out += (i1 % residual) * tensor->stride[tensor->len_shape - 3];
+        out += (i1 % residual) * t->stride[t->rank - 3];
     }
-    return out % (tensor->num_entries - 1);
+    return out % (t->num_entries - 1);
 }
 
 double _random()

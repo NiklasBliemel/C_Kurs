@@ -8,52 +8,94 @@ Tensor *init_tensor()
     Tensor *out = malloc(sizeof(*out));
     out->shape = malloc(sizeof(*out->shape));
     out->stride = malloc(sizeof(*out->shape));
-    out->data = malloc(sizeof(double));
-    out->len_shape = 1;
-    out->num_entries = 1;
-    *out->shape = 1;
+    out->data = malloc(0);
+    out->rank = 1;
+    out->num_entries = 0;
+    *out->shape = 0;
     *out->stride = 1;
     return out;
 }
 
-void shape_tensor(Tensor *out, unsigned *shape, int len_shape)
+void shape_tensor(Tensor *out, unsigned *shape, int rank)
 {
-    out->shape = realloc(out->shape, len_shape * sizeof(*shape));
-    out->stride = realloc(out->stride, len_shape * sizeof(*shape));
-    out->len_shape = len_shape;
+    if (out->rank == rank)
+    {
+        int already_init = 1;
+        for (int i = 0; i < out->rank; i++)
+        {
+            if (out->shape[i] != shape[i])
+            {
+                already_init = 0;
+            }
+        }
+        if (already_init)
+        {
+            return;
+        }
+    }
+
+    out->shape = realloc(out->shape, rank * sizeof(*shape));
+    out->stride = realloc(out->stride, rank * sizeof(*shape));
+    out->rank = rank;
     out->num_entries = 1;
-    for (int i = 0; i < len_shape; i++)
+    for (int i = 0; i < rank; i++)
     {
         out->shape[i] = shape[i];
-        out->stride[len_shape - i - 1] = out->num_entries;
-        out->num_entries *= shape[len_shape - i - 1];
+        out->stride[rank - i - 1] = out->num_entries;
+        out->num_entries *= shape[rank - i - 1];
     }
     out->data = realloc(out->data, out->num_entries * sizeof(double));
 }
 
-void zeros(Tensor *out, unsigned *shape, int len_shape)
+Tensor *subspace(unsigned *shape, int rank, double *datapoint)
 {
-    shape_tensor(out, shape, len_shape);
+    Tensor *out = malloc(sizeof(*out));
+    out->shape = malloc(rank * sizeof(*shape));
+    out->stride = malloc(rank * sizeof(*shape));
+    out->rank = rank;
+    out->num_entries = 1;
+    for (int i = 0; i < rank; i++)
+    {
+        out->shape[i] = shape[i];
+        out->stride[rank - i - 1] = out->num_entries;
+        out->num_entries *= shape[rank - i - 1];
+    }
+    out->data = datapoint;
+    return out;
+}
+
+void zeros(Tensor *out, unsigned *shape, int rank)
+{
+    shape_tensor(out, shape, rank);
     for (unsigned i = 0; i < out->num_entries; i++)
     {
         out->data[i] = 0;
     }
 }
 
-void ones(Tensor *out, unsigned *shape, int len_shape)
+void ones(Tensor *out, unsigned *shape, int rank)
 {
-    shape_tensor(out, shape, len_shape);
+    shape_tensor(out, shape, rank);
     for (unsigned i = 0; i < out->num_entries; i++)
     {
         out->data[i] = 1;
     }
 }
 
-void rands(Tensor *out, unsigned *shape, int len_shape)
+void fill(Tensor *out, unsigned *shape, int rank, double num)
+{
+    shape_tensor(out, shape, rank);
+    for (unsigned i = 0; i < out->num_entries; i++)
+    {
+        out->data[i] = num;
+    }
+}
+
+void rands(Tensor *out, unsigned *shape, int rank)
 {
     srand(time(NULL));
     _random();
-    shape_tensor(out, shape, len_shape);
+    shape_tensor(out, shape, rank);
     for (unsigned i = 0; i < out->num_entries; i++)
     {
         out->data[i] = _random();
@@ -80,12 +122,12 @@ void linspace(Tensor *out, double start, double end, unsigned num_entries)
     }
 }
 
-void copy(Tensor *out, Tensor *tensor)
+void copy(Tensor *out, Tensor *t)
 {
-    shape_tensor(out, tensor->shape, tensor->len_shape);
-    for (unsigned i = 0; i < tensor->num_entries; i++)
+    shape_tensor(out, t->shape, t->rank);
+    for (unsigned i = 0; i < t->num_entries; i++)
     {
-        out->data[i] = tensor->data[_reorder_index(tensor, i, -1)];
+        out->data[i] = t->data[_reorder(t, i)];
     }
 }
 
@@ -103,17 +145,14 @@ void eye(Tensor *out, unsigned len_diag)
 
 void outer(Tensor *out, Tensor *v1, Tensor *v2)
 {
+
     unsigned shape[2] = {v1->num_entries, v2->num_entries};
-    double new_entry;
     shape_tensor(out, shape, 2);
-    for (unsigned i = 0; i < (unsigned)v1->len_shape; i++)
+    for (unsigned i = 0; i < (unsigned)v1->num_entries; i++)
     {
-        for (unsigned j = 0; j < (unsigned)v2->len_shape; j++)
+        for (unsigned j = 0; j < (unsigned)v2->num_entries; j++)
         {
-            shape[0] = i;
-            shape[1] = j;
-            new_entry = v1->data[_reorder_index(v1, i, 0)] * v2->data[_reorder_index(v2, j, 0)];
-            set_element(out, shape, 2, new_entry);
+            out->data[i * out->stride[1] + j * out->stride[0]] = v1->data[i] * v2->data[j];
         }
     }
 }
@@ -125,25 +164,32 @@ void house_holder(Tensor *out, Tensor *vector_1D, unsigned size)
         printf("vector larger than size!\n");
         return;
     }
-
     eye(out, size);
     double norm = dot(vector_1D, vector_1D) / 2;
     double subtract;
     unsigned offset = size - vector_1D->num_entries;
+
     for (unsigned i = 0; i < vector_1D->num_entries; i++)
     {
         for (unsigned j = 0; j < vector_1D->num_entries; j++)
         {
-            subtract = vector_1D->data[_reorder_index(vector_1D, i, 0)] * vector_1D->data[_reorder_index(vector_1D, j, 0)] / norm;
+            subtract = vector_1D->data[i] * vector_1D->data[j] / norm;
             out->data[(i + offset) * out->stride[0] + (j + offset)] -= subtract;
         }
     }
 }
 
-void pop(Tensor *tensor)
+void pop(Tensor *t)
 {
-    free(tensor->data);
-    free(tensor->shape);
-    free(tensor->stride);
-    free(tensor);
+    free(t->data);
+    free(t->shape);
+    free(t->stride);
+    free(t);
+}
+
+void pop_sub(Tensor *t)
+{
+    free(t->shape);
+    free(t->stride);
+    free(t);
 }
