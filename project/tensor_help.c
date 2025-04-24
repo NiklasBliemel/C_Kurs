@@ -2,15 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned int _flatten_index(Tensor *tensor, unsigned int *index_list, int len_list)
+unsigned _flatten_index(Tensor *tensor, unsigned *index_list, int len_list)
 {
     if (tensor->len_shape != len_list)
     {
-        printf("Index List (%d) does not match Tensor shape (%d)\n", *index_list, *tensor->shape);
+        printf("Index List (%d) does not match Tensor shape (%d)\n", len_list, tensor->len_shape);
         return -1;
     }
-    unsigned int index = 0;
-    for (int i = 0; i <= tensor->len_shape; i++)
+    unsigned index = 0;
+    for (int i = 0; i < tensor->len_shape; i++)
     {
         if (tensor->shape[i] < index_list[i])
         {
@@ -26,7 +26,7 @@ unsigned int _flatten_index(Tensor *tensor, unsigned int *index_list, int len_li
     return index % tensor->num_entries;
 }
 
-unsigned int _reorder_index(Tensor *tensor, unsigned int index, int dim)
+unsigned _reorder_index(Tensor *tensor, unsigned index, int dim)
 {
     if (index == tensor->num_entries - 1)
     {
@@ -39,13 +39,13 @@ unsigned int _reorder_index(Tensor *tensor, unsigned int index, int dim)
     return index * tensor->stride[dim] % (tensor->num_entries - 1);
 }
 
-unsigned int _reorder_three(Tensor *tensor, unsigned int residual, unsigned int i1, unsigned int i2, unsigned int i3)
+unsigned _reorder_three(Tensor *tensor, unsigned residual, unsigned i1, unsigned i2, unsigned i3)
 {
     if ((i1 % residual) == residual - 1 && i2 == tensor->shape[tensor->len_shape - 2] - 1 && i3 == tensor->shape[tensor->len_shape - 1] - 1)
     {
         return tensor->num_entries - 1;
     }
-    unsigned int out = 0;
+    unsigned out = 0;
     out += i2 * tensor->stride[tensor->len_shape - 2];
     out += i3 * tensor->stride[tensor->len_shape - 1];
     if (tensor->len_shape > 2)
@@ -55,11 +55,7 @@ unsigned int _reorder_three(Tensor *tensor, unsigned int residual, unsigned int 
     return out % (tensor->num_entries - 1);
 }
 
-double abs(double num)
+double _random()
 {
-    if (num < 0)
-    {
-        return -num;
-    }
-    return num;
+    return ((double)rand() * (2)) / (double)RAND_MAX - 1;
 }

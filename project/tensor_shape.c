@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void reshape(Tensor *tensor, unsigned int *shape, int len_shape)
+void reshape(Tensor *tensor, unsigned *shape, int len_shape)
 {
-    unsigned int check = 1;
+    unsigned check = 1;
     int fill_index = -1;
     for (int i = 0; i < len_shape; i++)
     {
-        if (shape[i] != (unsigned int)-1)
+        if (shape[i] != (unsigned)-1)
         {
             check *= shape[i];
         }
@@ -29,7 +29,7 @@ void reshape(Tensor *tensor, unsigned int *shape, int len_shape)
     }
     tensor->shape = realloc(tensor->shape, len_shape * sizeof(int));
     *tensor->shape = *shape;
-    unsigned int temp = tensor->stride[tensor->len_shape - 1];
+    unsigned temp = tensor->stride[tensor->len_shape - 1];
     tensor->stride = realloc(tensor->stride, len_shape * sizeof(int));
     tensor->stride[len_shape - 1] = temp;
     tensor->len_shape = len_shape;
@@ -68,6 +68,6 @@ void permute(Tensor *tensor, int *permutation, int len_permutation)
 
 void flat(Tensor *t)
 {
-    unsigned int shape[] = {-1};
+    unsigned shape[] = {-1};
     reshape(t, shape, 1);
 }
