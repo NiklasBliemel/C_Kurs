@@ -4,27 +4,32 @@
 
 int main()
 {
-    Tensor *t = init_tensor();
-    Tensor *t2 = init_tensor();
-    Tensor *p = init_tensor();
-    Tensor *vector = init_tensor();
+    Tensor *A = init_tensor();
+    Tensor *Q = init_tensor();
+    Tensor *R = init_tensor();
+    Tensor *A_test = init_tensor();
+    Tensor *Q_test = init_tensor();
+    unsigned size = 3;
 
-    unsigned shape[] = {3, 3};
-    zeros(t, shape, 2);
-    for (unsigned i = 0; i < t->num_entries; i++)
-    {
-        t->data[i] = i + 1;
-    }
+    unsigned shape[] = {size, size};
+    int transpose[] = {1, 0};
+    rands(A, shape, 2);
 
-    extract_col(vector, t, 0, 0);
-    vector->data[0] -= norm(vector);
-    house_holder(p, vector, 3);
-    print_tensor(vector);
-    printf("\n");
-    print_tensor(p);
-    printf("\n");
-    print_tensor(t);
-    printf("\n");
-    matmul(t2, p, t);
-    print_tensor(t2);
+    QR(Q, R, A);
+    matmul(A_test, Q, R);
+
+    copy(Q_test, Q);
+    permute(Q_test, transpose, 2);
+    matmul(Q_test, Q, Q_test);
+
+    printf("\nA:\n");
+    print_tensor(A);
+    printf("\nQ:\n");
+    print_tensor(Q);
+    printf("\nR:\n");
+    print_tensor(R);
+    printf("\nQR\n");
+    print_tensor(A_test);
+    printf("\nQ Q.T\n");
+    print_tensor(Q_test);
 }

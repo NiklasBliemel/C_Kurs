@@ -147,6 +147,17 @@ void operation(Tensor *out, char op, Tensor *t1, Tensor *t2)
 
 void matmul(Tensor *out, Tensor *t1, Tensor *t2)
 {
+    if (t1->len_shape < 2 || t2->len_shape < 2)
+    {
+        printf("Dimensions smaller than 2!\n");
+        return;
+    }
+    if (t1->shape[t1->len_shape - 1] != t2->shape[t2->len_shape - 2])
+    {
+        printf("ERR1: Shapes don't match!\n");
+        return;
+    }
+    int pop_t1 = 0;
     int pop_t2 = 0;
     if (out == t2)
     {
@@ -154,11 +165,11 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
         copy(t2, out);
         pop_t2 = 1;
     }
-
-    if (t1->len_shape < 2 || t2->len_shape < 2)
+    if (out == t1)
     {
-        printf("Dimensions smaller than 2!\n");
-        return;
+        t1 = init_tensor();
+        copy(t1, out);
+        pop_t1 = 1;
     }
     unsigned *out_shape;
     int len_shape;
@@ -184,16 +195,6 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
     out_shape[t2->len_shape - 1] = t2->shape[t2->len_shape - 1];
     zeros(out, out_shape, len_shape);
 
-    if (t1->shape[t1->len_shape - 1] != t2->shape[t2->len_shape - 2])
-    {
-        printf("ERR1: Shapes don't match!\n");
-        if (pop_t2)
-        {
-            pop(t2);
-        }
-        return;
-    }
-
     for (int i = 3; i <= out->len_shape; i++)
     {
         if (t1->len_shape >= i && t2->len_shape >= i)
@@ -204,6 +205,10 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
                 if (pop_t2)
                 {
                     pop(t2);
+                }
+                if (pop_t1)
+                {
+                    pop(t1);
                 }
                 return;
             }
@@ -237,6 +242,10 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
     if (pop_t2)
     {
         pop(t2);
+    }
+    if (pop_t1)
+    {
+        pop(t1);
     }
 }
 

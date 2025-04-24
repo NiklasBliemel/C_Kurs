@@ -74,6 +74,8 @@ double norm(Tensor *t);
 
 // --------------------------------------------- algorithms
 
+void QR(Tensor *Q, Tensor *R, Tensor *A);
+
 // --------------------------------------------- print functions
 
 void print_tensor(Tensor *tensor);

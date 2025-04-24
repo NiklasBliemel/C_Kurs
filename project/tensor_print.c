@@ -55,8 +55,10 @@ void print_tensor(Tensor *tensor)
 
         printf("%4.3lf", tensor->data[_reorder_index(tensor, flat_index, -1)]);
     }
-
-    printf(", %4.3lf", tensor->data[tensor->num_entries - 1]);
+    if (tensor->num_entries > 1)
+    {
+        printf(", %4.3lf", tensor->data[tensor->num_entries - 1]);
+    }
     for (int i = 0; i < tensor->len_shape; i++)
     {
         printf("]");
