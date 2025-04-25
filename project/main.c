@@ -2,12 +2,21 @@
 #include <stdlib.h>
 #include "tensor.h"
 
-/*
-Demo for multi-dimensional QR decomposition!
+/* Projektarbeit C-Kurs, Blockkurs Frühling 2025
+ * Kursteilnehmer:
+ *    Niklas Bliemel, Matrikelnummer 2273004
+ *
+ * Projektname:
+ *    N-dim Tensor QR decomposition
+ *
+ * Compileraufruf:
+ *    make
  */
 
 int main()
 {
+    // Demo for multi-dimensional QR decomposition:
+
     Tensor *A = init_tensor();
     Tensor *Q = init_tensor();
     Tensor *R = init_tensor();

@@ -2,17 +2,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// prints tensor into commandline
 void print_tensor(Tensor *t)
 {
+    // check it there tensor is empty
     if (t->num_entries == 0)
     {
         printf("[]");
         return;
     }
 
-    int extra_print;
+    int extra_print; // used to decide if and how many "]", "[", "\n" and " ," have to be printed
     for (unsigned flat_index = 0; flat_index < t->num_entries - 1; flat_index++)
     {
+        // special rule for the first element
         if (flat_index == 0)
         {
             extra_print = 0;
@@ -22,6 +25,7 @@ void print_tensor(Tensor *t)
             extra_print = -1;
         }
 
+        // count extra prints
         for (int i = 0; i < t->rank; i++)
         {
             if (flat_index % t->stride[i] == 0)
@@ -29,6 +33,8 @@ void print_tensor(Tensor *t)
                 extra_print++;
             }
         }
+
+        // print according to extraprint counting results
         if (extra_print == 0)
         {
             printf(" ,");
@@ -64,6 +70,8 @@ void print_tensor(Tensor *t)
         }
         printf("%4.3lf", t->data[_reorder(t, flat_index)]);
     }
+
+    // special print for the last element
     printf(", %4.3lf", t->data[t->num_entries - 1]);
     for (int i = 0; i < t->rank; i++)
     {
