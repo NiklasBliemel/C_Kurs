@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include "tensor.h"
 
+/*
+Demo for multi-dimensional QR decomposition!
+ */
+
 int main()
 {
     Tensor *A = init_tensor();
