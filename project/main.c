@@ -13,12 +13,7 @@ int main()
     Tensor *Q_test = init_tensor();
 
     unsigned shape[3] = {2, 3, 3};
-    zeros(A, shape, 3);
-
-    for (unsigned i = 0; i < A->num_entries; i++)
-    {
-        A->data[i] = i + 1;
-    }
+    rands(A, shape, 3);
 
     QR(Q, R, A);
     matmul(A_test, Q, R);
