@@ -145,4 +145,13 @@ void print_shape(Tensor *t);
 
 void print_stride(Tensor *t);
 
+/*
+ * data function:
+ * save and load tensor form .bin file
+ */
+
+void save_tensor(Tensor *t, char *file);
+
+void load_tensor(Tensor *t, char *file);
+
 #endif // TENSOR_H_

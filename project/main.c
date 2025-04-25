@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "tensor.h"
 
 /* Projektarbeit C-Kurs, Blockkurs Frühling 2025
@@ -18,7 +19,7 @@
  *    Falls es nicht möglich, ist es auch oke!!
  */
 
-int main()
+void demo()
 {
     // Demo for multi-dimensional QR decomposition:
 
@@ -60,4 +61,67 @@ int main()
     pop(A_test);
     pop(Q_t);
     pop(Q_test);
+}
+
+int ends_with_bin(const char *filename)
+{
+    size_t len = strlen(filename);
+    if (len < 4)
+    {
+        return 0;
+    }
+    return strcmp(filename + len - 4, ".bin") == 0;
+}
+
+int main(int argc, char const *argv[])
+{
+    if (argc == 1)
+    {
+        demo();
+        return 0;
+    }
+    if (argc > 2)
+    {
+        printf("Only one file!\n");
+        return 1;
+    }
+    int len_string = strlen(argv[1]);
+    char *filename = malloc(len_string * sizeof(char));
+    strcpy(filename, argv[1]);
+
+    if (!ends_with_bin(filename))
+    {
+        printf("File has to end with \".bin\" !\n");
+        return 1;
+    }
+    Tensor *A = init_tensor();
+    Tensor *Q = init_tensor();
+    Tensor *R = init_tensor();
+
+    load_tensor(A, filename);
+    QR(Q, R, A);
+
+    filename = realloc(filename, (len_string + 2) * sizeof(char));
+    printf("%s\n", filename);
+    for (int i = len_string + 1; i >= len_string - 2; i--)
+    {
+        filename[i] = filename[i - 2];
+    }
+    filename[len_string - 4] = '_';
+
+    filename[len_string - 3] = 'Q';
+    save_tensor(Q, filename);
+    filename[len_string - 3] = 'R';
+    save_tensor(R, filename);
+
+    printf("A:\n");
+    print_tensor(A);
+    printf("\nQ:\n");
+    print_tensor(Q);
+    printf("\nR:\n");
+    print_tensor(R);
+
+    pop(A);
+    pop(Q);
+    pop(R);
 }
