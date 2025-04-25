@@ -2,24 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// QR decomposition for 2-d square matrix
 void _QR(Tensor *Q, Tensor *R, Tensor *A)
 {
-    if (A->rank != 2)
-    {
-        printf("Tensor has to be 2 dimensional!\n");
-        return;
-    }
-    if (A->shape[0] != A->shape[1])
-    {
-        printf("Matrix has to be square!\n");
-        return;
-    }
-    if (A->shape[0] < 2)
-    {
-        printf("Matrix at least size 2!\n");
-        return;
-    }
-
     // setup
     unsigned size = A->shape[0];
     Tensor *Qn = init_tensor();
@@ -50,13 +35,9 @@ void _QR(Tensor *Q, Tensor *R, Tensor *A)
     pop(R_temp);
 }
 
+// QR decomposition for every 2-d square matrix in the last two dimensions
 void QR(Tensor *Q, Tensor *R, Tensor *A)
 {
-    if (A->rank == 2)
-    {
-        _QR(Q, R, A);
-        return;
-    }
     if (A->shape[A->rank - 1] != A->shape[A->rank - 2])
     {
         printf("Matrix has to be square!\n");
@@ -64,19 +45,31 @@ void QR(Tensor *Q, Tensor *R, Tensor *A)
     }
     if (A->shape[A->rank - 1] < 2)
     {
-        printf("Matrix at least size 2!\n");
+        printf("Matrix at least rank 2!\n");
         return;
     }
+    if (A == Q || A == R || Q == R)
+    {
+        printf("Locations of Q,R and A has to be different!\n");
+        return;
+    }
+
+    if (A->rank == 2)
+    {
+        _QR(Q, R, A);
+        return;
+    }
+
+    // calculate how many matrices to decompose
     unsigned residual = A->num_entries;
     residual /= A->shape[A->rank - 1];
     residual /= A->shape[A->rank - 2];
 
+    // force shape Q and R into shape of A
     shape_tensor(Q, A->shape, A->rank);
-    if (R != A)
-    {
-        shape_tensor(R, A->shape, A->rank);
-    }
+    shape_tensor(R, A->shape, A->rank);
 
+    // create 2-d subspace tensor for every matrix and decompose every matrix one by one
     unsigned shape[2] = {A->shape[A->rank - 2], A->shape[A->rank - 1]};
     Tensor *a = subspace(shape, 2, A->data);
     Tensor *q = subspace(shape, 2, Q->data);
@@ -88,6 +81,8 @@ void QR(Tensor *Q, Tensor *R, Tensor *A)
         r->data = &R->data[i * R->stride[A->rank - 3] % (R->num_entries - 1)];
         _QR(q, r, a);
     }
+
+    // delete created subspaces
     pop_sub(a);
     pop_sub(q);
     pop_sub(r);

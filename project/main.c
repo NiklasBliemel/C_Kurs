@@ -4,7 +4,6 @@
 
 int main()
 {
-
     Tensor *A = init_tensor();
     Tensor *Q = init_tensor();
     Tensor *R = init_tensor();
@@ -16,7 +15,11 @@ int main()
     rands(A, shape, 3);
 
     QR(Q, R, A);
+
+    // Test if QR = A
     matmul(A_test, Q, R);
+
+    // Test if Q Q_t = 1
     copy(Q_t, Q);
     transpose(Q_t);
     matmul(Q_test, Q, Q_t);
@@ -32,4 +35,11 @@ int main()
     printf("\nQQ_t:\n");
     print_tensor(Q_test);
     printf("\n");
+
+    pop(A);
+    pop(Q);
+    pop(R);
+    pop(A_test);
+    pop(Q_t);
+    pop(Q_test);
 }

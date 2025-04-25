@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// replaces -1 entry with remaining number of entries of Tensor *t, if possible
 unsigned _fill_shape(Tensor *t, unsigned *shape, int rank)
 {
     unsigned fill_index = -1;
@@ -32,6 +33,7 @@ unsigned _fill_shape(Tensor *t, unsigned *shape, int rank)
     return product;
 }
 
+// calculates correct index for t.data array using the stride
 unsigned _flatten_index(Tensor *t, unsigned *index_list, int len_list)
 {
     if (t->rank != len_list)
@@ -55,6 +57,7 @@ unsigned _flatten_index(Tensor *t, unsigned *index_list, int len_list)
     return index;
 }
 
+// used to iterate through the complete t.data array in the right order defined by the stride
 unsigned _reorder(Tensor *t, unsigned flat_index)
 {
     if (flat_index == t->num_entries - 1)
@@ -64,6 +67,7 @@ unsigned _reorder(Tensor *t, unsigned flat_index)
     return flat_index * t->stride[t->rank - 1] % (t->num_entries - 1);
 }
 
+// used to iterate through all dimensions upper the 2nd. Used for multi dimensional matmul
 unsigned _reorder_three(Tensor *t, unsigned residual, unsigned i1, unsigned i2, unsigned i3)
 {
     if ((i1 % residual) == residual - 1 && i2 == t->shape[t->rank - 2] - 1 && i3 == t->shape[t->rank - 1] - 1)
@@ -80,6 +84,7 @@ unsigned _reorder_three(Tensor *t, unsigned residual, unsigned i1, unsigned i2, 
     return out % (t->num_entries - 1);
 }
 
+// returns random double value between -1 and 1 (not the best rng but sufficient for testing propuse)
 double _random()
 {
     return ((double)rand() * (2)) / (double)RAND_MAX - 1;

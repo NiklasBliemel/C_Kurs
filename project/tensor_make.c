@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+// initializes a new Tensor with 0 entries (allocates required memory) object and returns respective pointer
 Tensor *init_tensor()
 {
     Tensor *out = malloc(sizeof(*out));
@@ -16,6 +17,7 @@ Tensor *init_tensor()
     return out;
 }
 
+// force new shape onto tensor and reallocate memory accordingly (does nothing if tensor.shape is already as desired)
 void shape_tensor(Tensor *out, unsigned *shape, int rank)
 {
     if (out->rank == rank)
@@ -33,7 +35,6 @@ void shape_tensor(Tensor *out, unsigned *shape, int rank)
             return;
         }
     }
-
     out->shape = realloc(out->shape, rank * sizeof(*shape));
     out->stride = realloc(out->stride, rank * sizeof(*shape));
     out->rank = rank;
@@ -47,6 +48,7 @@ void shape_tensor(Tensor *out, unsigned *shape, int rank)
     out->data = realloc(out->data, out->num_entries * sizeof(double));
 }
 
+// creates Tensor object without allocating memory for tensor.data, already allocated memory form another tensor should be used instead
 Tensor *subspace(unsigned *shape, int rank, double *datapoint)
 {
     Tensor *out = malloc(sizeof(*out));
@@ -64,6 +66,7 @@ Tensor *subspace(unsigned *shape, int rank, double *datapoint)
     return out;
 }
 
+// force shapes tensor and fills with 0
 void zeros(Tensor *out, unsigned *shape, int rank)
 {
     shape_tensor(out, shape, rank);
@@ -73,6 +76,7 @@ void zeros(Tensor *out, unsigned *shape, int rank)
     }
 }
 
+// force shapes tensor and fills with 1
 void ones(Tensor *out, unsigned *shape, int rank)
 {
     shape_tensor(out, shape, rank);
@@ -82,6 +86,7 @@ void ones(Tensor *out, unsigned *shape, int rank)
     }
 }
 
+// force shaped tensor and fills with double num
 void fill(Tensor *out, unsigned *shape, int rank, double num)
 {
     shape_tensor(out, shape, rank);
@@ -91,6 +96,7 @@ void fill(Tensor *out, unsigned *shape, int rank, double num)
     }
 }
 
+// force shapes tensor and fills with random double values in range (-1,1)
 void rands(Tensor *out, unsigned *shape, int rank)
 {
     srand(time(NULL));
@@ -102,6 +108,7 @@ void rands(Tensor *out, unsigned *shape, int rank)
     }
 }
 
+// force shapes tensor to 1-d array of size unsigned range and fills with acceding numbers (staring with 0)
 void arange(Tensor *out, unsigned range)
 {
     unsigned shape[] = {range};
@@ -112,6 +119,7 @@ void arange(Tensor *out, unsigned range)
     }
 }
 
+// force shapes tensor to 1-d array of size unsigned num_entries and fills with from double start to double end
 void linspace(Tensor *out, double start, double end, unsigned num_entries)
 {
     unsigned shape[] = {num_entries};
@@ -122,6 +130,7 @@ void linspace(Tensor *out, double start, double end, unsigned num_entries)
     }
 }
 
+// force shapes Tensor *out to the same shape as Tensor *t and copies entries
 void copy(Tensor *out, Tensor *t)
 {
     shape_tensor(out, t->shape, t->rank);
@@ -131,6 +140,7 @@ void copy(Tensor *out, Tensor *t)
     }
 }
 
+// force shapes into 2-d square matrix of size len_diag x len_diag whereby each diagonal element is 1 and the rest are 0
 void eye(Tensor *out, unsigned len_diag)
 {
     unsigned shape[2] = {len_diag, len_diag};
@@ -143,20 +153,21 @@ void eye(Tensor *out, unsigned len_diag)
     }
 }
 
+// force shapes Tensor *out into 2-d v1.num_entries x v2.num_entries matrix converting it into the outerproduct of v1 and v2 (treats v1 and v2 as 1-d arrays)
 void outer(Tensor *out, Tensor *v1, Tensor *v2)
 {
-
     unsigned shape[2] = {v1->num_entries, v2->num_entries};
     shape_tensor(out, shape, 2);
     for (unsigned i = 0; i < (unsigned)v1->num_entries; i++)
     {
         for (unsigned j = 0; j < (unsigned)v2->num_entries; j++)
         {
-            out->data[i * out->stride[1] + j * out->stride[0]] = v1->data[i] * v2->data[j];
+            out->data[i * out->stride[1] + j * out->stride[0]] = v1->data[_reorder(v1, i)] * v2->data[_reorder(v2, j)];
         }
     }
 }
 
+// force shapes Tensor *out into size x size square matrix and converts it into the householder matrix with respect to Tensor *vector_1D
 void house_holder(Tensor *out, Tensor *vector_1D, unsigned size)
 {
     if (size < vector_1D->num_entries)
@@ -179,6 +190,7 @@ void house_holder(Tensor *out, Tensor *vector_1D, unsigned size)
     }
 }
 
+// delete tensor
 void pop(Tensor *t)
 {
     free(t->data);
@@ -187,6 +199,7 @@ void pop(Tensor *t)
     free(t);
 }
 
+// delete subspace tensor (does not free t.data because it is not explicitly allocated)
 void pop_sub(Tensor *t)
 {
     free(t->shape);

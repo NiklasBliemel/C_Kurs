@@ -31,6 +31,8 @@ double set_element(Tensor *t, unsigned *index_list, int len_list, double new_ent
     }
 }
 
+// extract columns with upper offset of every matrix in the last tow dimensions of Tensor *t into Tensor *out,
+// e.g. shape[3,4,5] -(offset=1/col=3)-> shape[3,3], whereby each row corresponds to the 3rd column with an offset of 1 of the respective matrix in tensor *t
 void extract_col(Tensor *out, Tensor *t, unsigned offset, int col)
 {
     if (t->rank < 2)
@@ -61,13 +63,9 @@ void extract_col(Tensor *out, Tensor *t, unsigned offset, int col)
     }
 }
 
+// computes dot product of v1 and v2, whereby both are treated as 1-d tensors
 double dot(Tensor *v1, Tensor *v2)
 {
-    if (v1->rank != 1 || v2->rank != 1)
-    {
-        printf("Rank should be 1!\n");
-        return -1;
-    }
     if (v1->num_entries != v2->num_entries)
     {
         printf("Sizes don't match!\n");
@@ -76,11 +74,12 @@ double dot(Tensor *v1, Tensor *v2)
     double out = 0;
     for (unsigned i = 0; i < v1->num_entries; i++)
     {
-        out += v1->data[i] * v2->data[i];
+        out += v1->data[_reorder(v1, i)] * v2->data[_reorder(v2, i)];
     }
     return out;
 }
 
+// use *op* num on every entry of tensor
 void single_operation(char op, Tensor *t, double num)
 {
     if (op == '+')
@@ -118,6 +117,7 @@ void single_operation(char op, Tensor *t, double num)
     }
 }
 
+// force shape out and fill with t1 *op* t2 (value by values operation)
 void operation(Tensor *out, char op, Tensor *t1, Tensor *t2)
 {
     if (out != t1)
@@ -168,6 +168,8 @@ void operation(Tensor *out, char op, Tensor *t1, Tensor *t2)
     }
 }
 
+// multi dimensional matmul matmul every matrix in the last two dimensions between t1 and t2: e.g. shape[10,5,6] matmul shape[5,10,6,5] -> shape[5,10,5,5]
+// (broadcasts the shapes of t1 and t2 if possible)
 void matmul(Tensor *out, Tensor *t1, Tensor *t2)
 {
     // basic error catches
@@ -187,7 +189,7 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
         return;
     }
 
-    // setup target tensor
+    // setup target tensor orientates of shape of larger tensor
     unsigned *out_shape;
     int rank;
     if (t1->rank <= t2->rank)
@@ -208,11 +210,13 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
             out_shape[i] = t1->shape[i];
         }
     }
+    // last two dimensions are choosen according to matmul rule
     out_shape[rank - 2] = t1->shape[t1->rank - 2];
     out_shape[rank - 1] = t2->shape[t2->rank - 1];
     zeros(out, out_shape, rank);
     free(out_shape);
 
+    // check if broadcasting is possible
     for (int i = 3; i <= out->rank; i++)
     {
         if (t1->rank >= i && t2->rank >= i)
@@ -225,6 +229,7 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
         }
     }
 
+    // calculate how many matrices there are and the last 2 dimensions of tensor out, t1 and t2
     unsigned residual = out->num_entries;
     unsigned residual_1 = t1->num_entries;
     unsigned residual_2 = t2->num_entries;
@@ -235,6 +240,7 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
         residual_2 /= t2->shape[t2->rank - i];
     }
 
+    // calculate every matmul according to standard broadcasting rules
     for (unsigned i = 0; i < residual; i++)
     {
         for (unsigned x = 0; x < out->shape[out->rank - 2]; x++)
@@ -251,6 +257,7 @@ void matmul(Tensor *out, Tensor *t1, Tensor *t2)
     }
 }
 
+// calculate euclidean norm of tensor (treated as 1-d vector)
 double norm(Tensor *t)
 {
     return sqrt(dot(t, t));

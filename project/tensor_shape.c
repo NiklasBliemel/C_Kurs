@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// reshape tensor into any shape, as long as num_entries stay the same (achieved by reordering t.data array)
 void reshape(Tensor *t, unsigned *shape, int rank)
 {
     Tensor *new_t = init_tensor();
@@ -26,6 +27,7 @@ void reshape(Tensor *t, unsigned *shape, int rank)
     pop(new_t);
 }
 
+// reshape tensor into desired shape if possible without reordering t.data array (very fast and independent on size of t.data array)
 void view(Tensor *t, unsigned *shape, int rank)
 {
     unsigned check_num_entries = _fill_shape(t, shape, rank);
@@ -66,6 +68,7 @@ void view(Tensor *t, unsigned *shape, int rank)
     t->rank = rank;
 }
 
+// permute dimensions depending on given permutation list, e.g. [2,0,1] on shape[3,4,5] -> shape[5,3,4] (works by permuting the stride)
 void permute(Tensor *t, int *permutation, int len_permutation)
 {
     if (len_permutation != t->rank)
@@ -93,6 +96,7 @@ void permute(Tensor *t, int *permutation, int len_permutation)
     t->stride = new_stride;
 }
 
+// permutes last two dimensions of tensor
 void transpose(Tensor *t)
 {
     if (t->rank < 2)
@@ -108,6 +112,7 @@ void transpose(Tensor *t)
     t->stride[t->rank - 2] = temp;
 }
 
+// reshapes tensor into 1-d tensor
 void flat(Tensor *t)
 {
     unsigned shape[] = {-1};
