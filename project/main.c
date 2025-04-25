@@ -11,6 +11,11 @@
  *
  * Compileraufruf:
  *    make
+ *
+ * Benotung:
+ *    ich würde doch gerne um eine Benotung bitten falls das noch möglich ist, da ich mir am ende doch einen größeren
+ *    Aufwand als geplant gemacht habe und zusätzlich zur QR decomposition eine ganze n-dim Tensor libary geschrieben habe :)
+ *    Falls es nicht möglich, ist es auch oke!!
  */
 
 int main()
